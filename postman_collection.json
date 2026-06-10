@@ -1,0 +1,355 @@
+{
+  "info": {
+    "name": "Conway's Game of Life API",
+    "description": "Backend API for Conway's Game of Life with auth, history, and SSE streaming.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api", "auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"password123\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.test('User created', function () {",
+                  "        var json = pm.response.json();",
+                  "        pm.expect(json.id).to.be.a('string');",
+                  "        pm.expect(json.username).to.eql('alice');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"password123\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.test('Token saved', function () {",
+                  "        pm.expect(json.token).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Game",
+      "item": [
+        {
+          "name": "Next State — Blinker",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/game/next", "host": ["{{base_url}}"], "path": ["api", "game", "next"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cells\": [\n    [0, 1, 0],\n    [0, 1, 0],\n    [0, 1, 0]\n  ]\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Blinker oscillates', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.cells).to.eql([[0,0,0],[1,1,1],[0,0,0]]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Next State — Block (still life)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/game/next", "host": ["{{base_url}}"], "path": ["api", "game", "next"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cells\": [\n    [0, 0, 0, 0],\n    [0, 1, 1, 0],\n    [0, 1, 1, 0],\n    [0, 0, 0, 0]\n  ]\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Block is stable', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.cells).to.eql([[0,0,0,0],[0,1,1,0],[0,1,1,0],[0,0,0,0]]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Next State — Boolean grid",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/game/next", "host": ["{{base_url}}"], "path": ["api", "game", "next"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cells\": [\n    [false, true, false],\n    [false, true, false],\n    [false, true, false]\n  ]\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Boolean grid accepted', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.cells).to.eql([[0,0,0],[1,1,1],[0,0,0]]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Next State — Invalid (too small)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/game/next", "host": ["{{base_url}}"], "path": ["api", "game", "next"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cells\": [\n    [0, 1],\n    [1, 0]\n  ]\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Rejects 2x2 grid', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Next State — No auth (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/api/game/next", "host": ["{{base_url}}"], "path": ["api", "game", "next"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cells\": [\n    [0, 1, 0],\n    [0, 1, 0],\n    [0, 1, 0]\n  ]\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Requires auth', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "History (Bonus I)",
+      "item": [
+        {
+          "name": "Query all history",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/history",
+              "host": ["{{base_url}}"],
+              "path": ["api", "history"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns paginated history', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.data).to.be.an('array');",
+                  "    pm.expect(json.page).to.be.a('number');",
+                  "    pm.expect(json.per_page).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Query by grid size",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/history?grid_size=3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "history"],
+              "query": [{ "key": "grid_size", "value": "3" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Query by time range",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/history?from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z",
+              "host": ["{{base_url}}"],
+              "path": ["api", "history"],
+              "query": [
+                { "key": "from", "value": "2026-01-01T00:00:00Z" },
+                { "key": "to", "value": "2026-12-31T23:59:59Z" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Query with pagination",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/history?page=1&per_page=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "history"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "5" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events (Bonus II)",
+      "item": [
+        {
+          "name": "SSE Stream",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events"]
+            },
+            "description": "Server-Sent Events stream. In Postman, open this in a new tab — events appear as they are generated by other users submitting grids."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
