@@ -8,6 +8,7 @@ use crate::domain::grid::GridError;
 pub enum AppError {
     Validation(String),
     Auth(String),
+    Forbidden(String),
     NotFound(String),
     Internal(String),
     Conflict(String),
@@ -18,6 +19,7 @@ impl IntoResponse for AppError {
         let (status, message) = match &self {
             Self::Validation(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
             Self::Auth(msg) => (StatusCode::UNAUTHORIZED, msg.clone()),
+            Self::Forbidden(msg) => (StatusCode::FORBIDDEN, msg.clone()),
             Self::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
             Self::Internal(msg) => {
                 tracing::error!("internal error: {msg}");

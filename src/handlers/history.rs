@@ -29,16 +29,23 @@ pub struct HistoryResponse {
 
 pub async fn query(
     State(state): State<AppState>,
-    _auth: AuthUser,
+    auth: AuthUser,
     Query(params): Query<HistoryQuery>,
 ) -> Result<Json<HistoryResponse>, AppError> {
     let page = params.page.unwrap_or(1).max(1);
     let per_page = params.per_page.unwrap_or(20).clamp(1, 100);
 
+    // Regular users can only see their own history; admins can query any user
+    let effective_user_id = if auth.is_admin() {
+        params.user_id
+    } else {
+        Some(auth.user_id)
+    };
+
     let data = history_service::query(
         &state.pool,
         history_service::Filters {
-            user_id: params.user_id,
+            user_id: effective_user_id,
             grid_size: params.grid_size,
             from: params.from,
             to: params.to,

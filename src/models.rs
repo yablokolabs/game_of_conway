@@ -3,11 +3,15 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
+pub const ROLE_USER: &str = "user";
+pub const ROLE_ADMIN: &str = "admin";
+
 #[derive(Debug, Clone, FromRow)]
 pub struct User {
     pub id: Uuid,
     pub username: String,
     pub password_hash: String,
+    pub role: String,
     pub created_at: DateTime<Utc>,
 }
 

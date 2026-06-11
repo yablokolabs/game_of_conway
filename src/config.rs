@@ -4,6 +4,8 @@ pub struct Config {
     pub jwt_secret: String,
     pub host: String,
     pub port: u16,
+    pub admin_username: Option<String>,
+    pub admin_password: Option<String>,
 }
 
 impl Config {
@@ -19,6 +21,8 @@ impl Config {
                 .unwrap_or_else(|_| "3000".into())
                 .parse()
                 .map_err(|_| "PORT must be a valid u16".to_string())?,
+            admin_username: std::env::var("ADMIN_USERNAME").ok(),
+            admin_password: std::env::var("ADMIN_PASSWORD").ok(),
         })
     }
 }

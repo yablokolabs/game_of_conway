@@ -9,11 +9,13 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::error::AppError;
+use crate::models::ROLE_ADMIN;
 use crate::AppState;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: Uuid,
+    pub role: String,
     pub exp: usize,
 }
 
@@ -33,13 +35,17 @@ pub fn verify_password(password: &str, hash: &str) -> Result<bool, AppError> {
         .is_ok())
 }
 
-pub fn create_token(user_id: Uuid, secret: &str) -> Result<String, AppError> {
+pub fn create_token(user_id: Uuid, role: &str, secret: &str) -> Result<String, AppError> {
     let exp = chrono::Utc::now()
         .checked_add_signed(chrono::Duration::hours(24))
         .expect("valid timestamp")
         .timestamp() as usize;
 
-    let claims = Claims { sub: user_id, exp };
+    let claims = Claims {
+        sub: user_id,
+        role: role.to_string(),
+        exp,
+    };
     encode(
         &Header::default(),
         &claims,
@@ -60,6 +66,13 @@ pub fn validate_token(token: &str, secret: &str) -> Result<Claims, AppError> {
 
 pub struct AuthUser {
     pub user_id: Uuid,
+    pub role: String,
+}
+
+impl AuthUser {
+    pub fn is_admin(&self) -> bool {
+        self.role == ROLE_ADMIN
+    }
 }
 
 impl<S> FromRequestParts<S> for AuthUser
@@ -85,6 +98,30 @@ where
         let claims = validate_token(token, &app_state.jwt_secret)?;
         Ok(Self {
             user_id: claims.sub,
+            role: claims.role,
+        })
+    }
+}
+
+/// Extractor that requires the authenticated user to have the `admin` role.
+pub struct AdminUser {
+    pub user_id: Uuid,
+}
+
+impl<S> FromRequestParts<S> for AdminUser
+where
+    S: Send + Sync,
+    AppState: axum::extract::FromRef<S>,
+{
+    type Rejection = AppError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let auth = AuthUser::from_request_parts(parts, state).await?;
+        if !auth.is_admin() {
+            return Err(AppError::Forbidden("admin access required".into()));
+        }
+        Ok(Self {
+            user_id: auth.user_id,
         })
     }
 }

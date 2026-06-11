@@ -79,4 +79,31 @@ impl TestApp {
         let body: serde_json::Value = res.json().await.unwrap();
         body["token"].as_str().unwrap().to_string()
     }
+
+    /// Register a user, promote to admin in the DB, then re-login to get a
+    /// token that carries the `admin` role claim.
+    pub async fn register_admin(&self, username: &str, password: &str) -> String {
+        self.register_and_login(username, password).await;
+
+        sqlx::query("UPDATE users SET role = 'admin' WHERE username = $1")
+            .bind(username)
+            .execute(&self.pool)
+            .await
+            .expect("failed to promote user to admin");
+
+        // Re-login so the JWT includes the updated role
+        let client = reqwest::Client::new();
+        let res = client
+            .post(format!("{}/api/auth/login", self.base_url))
+            .json(&serde_json::json!({
+                "username": username,
+                "password": password,
+            }))
+            .send()
+            .await
+            .expect("admin login request failed");
+
+        let body: serde_json::Value = res.json().await.unwrap();
+        body["token"].as_str().unwrap().to_string()
+    }
 }

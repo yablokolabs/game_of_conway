@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::auth;
 use crate::error::AppError;
-use crate::models::User;
+use crate::models::{User, ROLE_USER};
 use crate::repositories::user_repo;
 
 pub async fn register(pool: &PgPool, username: &str, password: &str) -> Result<User, AppError> {
@@ -22,7 +22,7 @@ pub async fn register(pool: &PgPool, username: &str, password: &str) -> Result<U
     let password_hash = tokio::task::spawn_blocking(move || auth::hash_password(&password))
         .await
         .map_err(|e| AppError::Internal(format!("blocking task failed: {e}")))??;
-    user_repo::create(pool, Uuid::new_v4(), username, &password_hash).await
+    user_repo::create(pool, Uuid::new_v4(), username, &password_hash, ROLE_USER).await
 }
 
 pub async fn login(
@@ -45,5 +45,5 @@ pub async fn login(
         return Err(AppError::Auth("invalid credentials".into()));
     }
 
-    auth::create_token(user.id, jwt_secret)
+    auth::create_token(user.id, &user.role, jwt_secret)
 }

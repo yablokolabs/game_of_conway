@@ -18,6 +18,7 @@ pub struct RegisterRequest {
 pub struct RegisterResponse {
     pub id: Uuid,
     pub username: String,
+    pub role: String,
 }
 
 pub async fn register(
@@ -30,6 +31,7 @@ pub async fn register(
         Json(RegisterResponse {
             id: user.id,
             username: user.username,
+            role: user.role,
         }),
     ))
 }

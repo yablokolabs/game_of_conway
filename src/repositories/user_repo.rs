@@ -9,15 +9,17 @@ pub async fn create(
     id: Uuid,
     username: &str,
     password_hash: &str,
+    role: &str,
 ) -> Result<User, AppError> {
     let user = sqlx::query_as::<_, User>(
-        "INSERT INTO users (id, username, password_hash) \
-         VALUES ($1, $2, $3) \
-         RETURNING id, username, password_hash, created_at",
+        "INSERT INTO users (id, username, password_hash, role) \
+         VALUES ($1, $2, $3, $4) \
+         RETURNING id, username, password_hash, role, created_at",
     )
     .bind(id)
     .bind(username)
     .bind(password_hash)
+    .bind(role)
     .fetch_one(pool)
     .await?;
 
@@ -26,7 +28,7 @@ pub async fn create(
 
 pub async fn find_by_username(pool: &PgPool, username: &str) -> Result<Option<User>, AppError> {
     let user = sqlx::query_as::<_, User>(
-        "SELECT id, username, password_hash, created_at \
+        "SELECT id, username, password_hash, role, created_at \
          FROM users WHERE username = $1",
     )
     .bind(username)
