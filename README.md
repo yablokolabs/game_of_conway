@@ -73,6 +73,66 @@ cargo test --lib
 cargo test
 ```
 
+### Debugging with `rust-lldb`
+
+Build the debug binary and launch it under `rust-lldb`:
+
+```bash
+# Build in debug mode (default)
+cargo build
+
+# Start the debugger
+rust-lldb target/debug/game_of_conway
+```
+
+Common LLDB commands:
+
+```
+# Set a breakpoint by function name
+(lldb) b game_of_conway::domain::grid::next_state
+
+# Set a breakpoint by file and line
+(lldb) b src/domain/grid.rs:42
+
+# Run the program
+(lldb) r
+
+# Step over / step into / step out
+(lldb) n
+(lldb) s
+(lldb) finish
+
+# Print a variable
+(lldb) p grid
+(lldb) frame variable
+
+# Show backtrace
+(lldb) bt
+
+# Continue execution
+(lldb) c
+
+# List breakpoints / delete one
+(lldb) br list
+(lldb) br delete 1
+
+# Quit
+(lldb) q
+```
+
+To debug tests:
+
+```bash
+# Find the test binary
+cargo test --no-run --lib 2>&1 | grep Executable
+
+# Debug it (replace with the actual path from above)
+rust-lldb target/debug/deps/game_of_conway-<hash>
+
+# Inside lldb, run a specific test
+(lldb) r --test-threads=1 test_name
+```
+
 ## API Reference
 
 ### Authentication
