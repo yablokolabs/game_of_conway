@@ -183,14 +183,15 @@ Grid must be square, 3×3 to 1000×1000. Cell values: `0`/`1` or `false`/`true`.
 
 Query stored grid requests with optional filters.
 
-| Parameter  | Type      | Description            |
-|------------|-----------|------------------------|
-| `user_id`  | UUID      | Filter by user         |
-| `grid_size`| integer   | Filter by grid size    |
-| `from`     | ISO 8601  | Start of time range    |
-| `to`       | ISO 8601  | End of time range      |
-| `page`     | integer   | Page number (default 1)|
-| `per_page` | integer   | Items per page (1–100) |
+| Parameter     | Type      | Description                          |
+|---------------|-----------|--------------------------------------|
+| `user_id`     | UUID      | Filter by user                       |
+| `grid_size`   | integer   | Filter by grid size                  |
+| `input_state` | JSON      | Filter by exact input grid (URL-encoded JSON 2D array) |
+| `from`        | ISO 8601  | Start of time range                  |
+| `to`          | ISO 8601  | End of time range                    |
+| `page`        | integer   | Page number (default 1)              |
+| `per_page`    | integer   | Items per page (1–100)               |
 
 ```json
 // Response 200

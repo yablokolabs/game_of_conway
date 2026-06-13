@@ -291,6 +291,22 @@
           "response": []
         },
         {
+          "name": "Query by input state",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/history?input_state=[[0,1,0],[0,1,0],[0,1,0]]",
+              "host": ["{{base_url}}"],
+              "path": ["api", "history"],
+              "query": [{ "key": "input_state", "value": "[[0,1,0],[0,1,0],[0,1,0]]" }]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Query by time range",
           "request": {
             "method": "GET",

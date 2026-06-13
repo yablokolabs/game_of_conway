@@ -14,6 +14,8 @@ use crate::AppState;
 pub struct HistoryQuery {
     pub user_id: Option<Uuid>,
     pub grid_size: Option<i32>,
+    /// JSON-encoded 2D grid to match against stored input states.
+    pub input_state: Option<String>,
     pub from: Option<DateTime<Utc>>,
     pub to: Option<DateTime<Utc>>,
     pub page: Option<i64>,
@@ -42,11 +44,18 @@ pub async fn query(
         Some(auth.user_id)
     };
 
+    let input_state = params
+        .input_state
+        .map(|s| serde_json::from_str::<serde_json::Value>(&s))
+        .transpose()
+        .map_err(|_| AppError::Validation("input_state must be a valid JSON grid".into()))?;
+
     let data = history_service::query(
         &state.pool,
         history_service::Filters {
             user_id: effective_user_id,
             grid_size: params.grid_size,
+            input_state,
             from: params.from,
             to: params.to,
             page,

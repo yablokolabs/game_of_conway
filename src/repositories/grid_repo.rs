@@ -32,6 +32,7 @@ pub async fn save(
 pub struct QueryFilters {
     pub user_id: Option<Uuid>,
     pub grid_size: Option<i32>,
+    pub input_state: Option<serde_json::Value>,
     pub from: Option<DateTime<Utc>>,
     pub to: Option<DateTime<Utc>>,
     pub limit: i64,
@@ -47,6 +48,9 @@ pub async fn query(pool: &PgPool, filters: QueryFilters) -> Result<Vec<GridReque
     }
     if let Some(size) = filters.grid_size {
         qb.push(" AND grid_size = ").push_bind(size);
+    }
+    if let Some(input) = filters.input_state {
+        qb.push(" AND input_grid = ").push_bind(input);
     }
     if let Some(from) = filters.from {
         qb.push(" AND created_at >= ").push_bind(from);

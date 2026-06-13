@@ -42,6 +42,53 @@ async fn history_returns_past_requests() {
 }
 
 #[tokio::test]
+async fn history_filters_by_input_state() {
+    let app = common::TestApp::spawn().await;
+    let username = app.unique_name("histinput");
+    let token = app.register_and_login(&username, "password123").await;
+    let client = reqwest::Client::new();
+
+    let blinker = json!({"cells": [[0,1,0],[0,1,0],[0,1,0]]});
+    let block = json!({"cells": [[1,1,0],[1,1,0],[0,0,0]]});
+
+    // Submit different input states
+    client
+        .post(format!("{}/api/game/next", app.base_url))
+        .header("Authorization", format!("Bearer {token}"))
+        .json(&blinker)
+        .send()
+        .await
+        .unwrap();
+
+    client
+        .post(format!("{}/api/game/next", app.base_url))
+        .header("Authorization", format!("Bearer {token}"))
+        .json(&block)
+        .send()
+        .await
+        .unwrap();
+
+    // Query filtering by the blinker input state
+    let input_state = json!([[0,1,0],[0,1,0],[0,1,0]]).to_string();
+    let res = client
+        .get(format!(
+            "{}/api/history?input_state={}",
+            app.base_url,
+            urlencoding::encode(&input_state)
+        ))
+        .header("Authorization", format!("Bearer {token}"))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(res.status(), StatusCode::OK);
+    let body: serde_json::Value = res.json().await.unwrap();
+    let data = body["data"].as_array().unwrap();
+    assert_eq!(data.len(), 1);
+    assert_eq!(data[0]["input_grid"], json!([[0,1,0],[0,1,0],[0,1,0]]));
+}
+
+#[tokio::test]
 async fn history_filters_by_grid_size() {
     let app = common::TestApp::spawn().await;
     let username = app.unique_name("histsz");
